@@ -5,7 +5,7 @@ and writes the answer on the page right after the `=`. Change a digit or erase a
 Stroke capture, preprocessing, neural-network inference and arithmetic all run in the browser: **no cloud APIs,
 and it works offline (airplane mode).**
 
-**Live demo:**https://pair-programming-proj.vercel.app/
+**Live demo:**https://pair-programming-proj.vercel.app/.
 **Design document:** [ARCHITECTURE.md](ARCHITECTURE.md) ·
 
 ## Quick start
