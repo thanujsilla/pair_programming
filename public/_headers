@@ -1,0 +1,19 @@
+# Cloudflare Pages response headers.
+# Cross-origin isolation lets the WASM runtime use several threads. It is an enhancement only:
+# the app also works without it.
+/*
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Resource-Policy: same-origin
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+
+# The service worker and the pages must always be checked for updates.
+/sw.js
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+
+# Built files have a hash in their name, so they never change.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
