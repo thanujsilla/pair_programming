@@ -1,0 +1,254 @@
+:root {
+  --paper: #f6f1e7;
+  --ink: #1f1d1a;
+  --line: rgba(60, 90, 140, 0.13);
+  --accent: #b4532a;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: var(--ink);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--paper);
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.toolbar h1 {
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: 0.02em;
+}
+
+.group {
+  display: flex;
+  gap: 6px;
+}
+
+button {
+  font: inherit;
+  padding: 6px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  background: #fffdf8;
+  color: inherit;
+  cursor: pointer;
+}
+
+button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.width {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Ruled-paper board. The engine adds its canvases inside this element. */
+.board {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px);
+  background-size: 100% 56px;
+  touch-action: none;
+}
+
+/* Shown on the empty page, never in the way of the pen. */
+.empty-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40%;
+  margin: 0;
+  text-align: center;
+  font-size: 1.1rem;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.workspace {
+  position: relative;
+}
+
+.status {
+  margin: 0;
+  padding: 8px 16px;
+  background: #fbe9e7;
+  color: #8a1c10;
+  font-size: 0.9rem;
+}
+
+.hud {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 10;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(20, 20, 20, 0.85);
+  color: #e8ffe8;
+  font: 12px/1.5 ui-monospace, Consolas, monospace;
+  pointer-events: none;
+}
+
+/* Benchmark page (developer tool) */
+.bench-body {
+  -webkit-user-select: text;
+  user-select: text;
+}
+.bench {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 12px 16px 40px;
+}
+.bench-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-bottom: 8px;
+}
+.bench-head h1 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.bench-head nav {
+  display: flex;
+  gap: 8px;
+}
+.bench-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bench-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+}
+.bench-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.8rem;
+}
+.bench-prompt {
+  margin: 0;
+  font-size: 1rem;
+}
+.bench-prompt b {
+  font-size: 1.6rem;
+  letter-spacing: 0.06em;
+}
+.bench-board {
+  position: relative;
+  height: 220px;
+  background-color: #fffdf8;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px);
+  background-size: 100% 56px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  touch-action: none;
+}
+.bench-table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  width: 100%;
+}
+.bench-table th,
+.bench-table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+.bench-bad td {
+  background: rgba(180, 83, 42, 0.08);
+}
+.bench-scroll {
+  max-height: 320px;
+  overflow: auto;
+}
+.bench-note {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.bench-error {
+  margin: 0;
+  color: #a02020;
+}
+.bench-file input {
+  font-size: 0.8rem;
+}
+
+/* Pen color swatches */
+.colors {
+  align-items: center;
+}
+button.swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+}
+button.swatch[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+}
+label.swatch.custom {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+  cursor: pointer;
+}
+label.swatch.custom input {
+  position: absolute;
+  inset: -6px;
+  width: 40px;
+  height: 40px;
+  opacity: 0;
+  cursor: pointer;
+}
