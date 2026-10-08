@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { ANSWER_GAP, answerFontSize, layoutAnswer } from './answers';
+import { ANSWER_GAP, ANSWER_SIZE_FACTOR, answerFontSize, layoutAnswer } from './answers';
 
 const anchor = { left: 100, top: 100, right: 300, bottom: 140 };
 
 describe('answerFontSize', () => {
-  it('follows the handwriting height within limits', () => {
-    expect(answerFontSize(anchor)).toBeCloseTo(36);
-    expect(answerFontSize({ left: 0, top: 0, right: 10, bottom: 10 })).toBe(24);
-    expect(answerFontSize({ left: 0, top: 0, right: 10, bottom: 200 })).toBe(64);
+  it('scales with the size of the handwriting, with no upper limit', () => {
+    expect(answerFontSize(anchor, 40)).toBeCloseTo(40 * ANSWER_SIZE_FACTOR);
+    expect(answerFontSize(anchor, 120)).toBeCloseTo(120 * ANSWER_SIZE_FACTOR);
+    expect(answerFontSize(anchor, 300)).toBeCloseTo(300 * ANSWER_SIZE_FACTOR);
+  });
+
+  it('is twice as big for handwriting twice as big', () => {
+    expect(answerFontSize(anchor, 80) / answerFontSize(anchor, 40)).toBeCloseTo(2);
+  });
+
+  it('falls back to the anchor height, and never gets unreadably small', () => {
+    expect(answerFontSize(anchor)).toBeCloseTo(40 * ANSWER_SIZE_FACTOR);
+    expect(answerFontSize({ left: 0, top: 0, right: 5, bottom: 4 })).toBe(12);
   });
 });
 
