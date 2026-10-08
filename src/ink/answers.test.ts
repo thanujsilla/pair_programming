@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ANSWER_GAP, ANSWER_SIZE_FACTOR, answerFontSize, layoutAnswer } from './answers';
+import { ANSWER_GAP, ANSWER_SIZE_FACTOR, answerFontSize, answerOutline, layoutAnswer } from './answers';
 
 const anchor = { left: 100, top: 100, right: 300, bottom: 140 };
 
@@ -34,5 +34,16 @@ describe('layoutAnswer', () => {
   it('still fits when the text ends right at the margin', () => {
     const width = 800 - 8 - (300 + ANSWER_GAP);
     expect(layoutAnswer(anchor, width, 800, 36).x).toBe(300 + ANSWER_GAP);
+  });
+});
+describe('answerOutline', () => {
+  it('thickens the answer to the pen width, never below the font own stems', () => {
+    expect(answerOutline(40, 8)).toBeCloseTo(8 - 40 * 0.07);
+    expect(answerOutline(40, 1)).toBe(0);
+    expect(answerOutline(40)).toBe(0);
+    expect(answerOutline(40, Number.NaN)).toBe(0);
+  });
+  it('a thicker pen gives a thicker answer', () => {
+    expect(answerOutline(40, 10)).toBeGreaterThan(answerOutline(40, 5));
   });
 });

@@ -1,4 +1,4 @@
-import { answerFontSize, answerKey, isLowConfidence, layoutAnswer, layoutAnswerSide } from './answers';
+import { answerFontSize, answerKey, answerOutline, isLowConfidence, layoutAnswer, layoutAnswerSide } from './answers';
 import type { AnswerKind, AnswerLabel } from './answers';
 import type { Rect } from './bounds';
 import { backingSize } from './coords';
@@ -157,6 +157,8 @@ export class InkEngine {
 
   setWidth(width: number): void {
     this.width = width;
+    this.overlayDirty = true; // answers are as thick as the pen
+    this.schedule();
   }
 
   /** Color for the next pen strokes; strokes already drawn keep their own color. */
@@ -586,6 +588,14 @@ export class InkEngine {
       ctx.fillStyle = ANSWER_COLORS[label.kind];
       ctx.globalAlpha = low ? 0.55 : 1;
       ctx.fillText(label.text, 0, 0);
+      const outline = answerOutline(size, this.width / scale);
+      if (outline > 0.2) {
+        // thicken the strokes to the user's pen width
+        ctx.lineWidth = outline;
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = ANSWER_COLORS[label.kind];
+        ctx.strokeText(label.text, 0, 0);
+      }
       if (low) {
         // unsure: a dashed underline and a "?" ask the user to check the handwriting
         ctx.globalAlpha = 0.7;

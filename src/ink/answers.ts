@@ -69,3 +69,15 @@ export function layoutAnswerSide(anchor: Rect, fontSize: number, side: 'below' |
     ? { x: anchor.left, y: anchor.bottom + ANSWER_GAP + fontSize * 0.5 }
     : { x: anchor.left, y: anchor.top - ANSWER_GAP - fontSize * 0.5 };
 }
+
+/** A typical handwriting font's stems are about this fraction of its size thick. */
+const NATIVE_STEM = 0.07;
+
+/**
+ * Extra outline (in page units) that makes the answer's strokes as thick as the user's pen. Never negative:
+ * a font cannot be made thinner than it is.
+ */
+export function answerOutline(fontSize: number, penWidth?: number): number {
+  if (penWidth === undefined || !(penWidth > 0)) return 0;
+  return Math.max(0, penWidth - fontSize * NATIVE_STEM);
+}
