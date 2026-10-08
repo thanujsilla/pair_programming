@@ -1,13 +1,13 @@
 import type { Line } from '../ink/lineGrouper';
-import { straighten } from '../ink/rotate';
 import { calculate } from '../math';
 import type { EvalResult } from '../math';
 import type { Recognizer } from './types';
+import { pickReading, variantsOf, type Reading, type Variant } from './variants';
 
 export type LineStatus =
   | { state: 'idle' } // changed, waiting for the pen to rest
   | { state: 'running' } // recognizer is working on it right now
-  | { state: 'done'; text: string; result: EvalResult }
+  | { state: 'done'; text: string; result: EvalResult; confidence?: number; kind?: Variant['kind'] }
   | { state: 'failed' };
 
 type Settled = Extract<LineStatus, { state: 'done' | 'failed' }>;
@@ -110,16 +110,21 @@ export class RecognitionScheduler {
     const started = performance.now();
 
     try {
-      const out = await this.recognizer.recognize({
-        lineIndex: line.index,
-        // tilted writing is turned upright first: the model only reads level lines
-        strokes: straighten(line.strokes, line.angle),
-      });
-
+      // A line that is not level is presented to the model in more than one way (turned, and levelled
+      // with the digits kept upright); the reading it is surest of is kept.
+      const readings: Reading[] = [];
+      for (const v of variantsOf(line.strokes, line.angle)) {
+        const out = await this.recognizer.recognize({ lineIndex: line.index, strokes: v.strokes });
+        readings.push({ kind: v.kind, out, result: calculate(out.text) });
+      }
+      const chosen = pickReading(readings);
+      const out = chosen.out;
       settled = {
         state: 'done',
         text: out.text,
-        result: calculate(out.text),
+        result: chosen.result,
+        kind: chosen.kind,
+        ...(out.confidence === undefined ? {} : { confidence: out.confidence }),
       };
     } catch {
       settled = { state: 'failed' }; // cached, so a failing line is not retried in a loop

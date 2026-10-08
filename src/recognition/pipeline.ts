@@ -1,4 +1,4 @@
-import type { AnswerLabel } from '../ink/answers';
+import { ANSWER_GAP, type AnswerLabel } from '../ink/answers';
 import { groupLines, type Line } from '../ink/lineGrouper';
 import type { StrokeStore } from '../ink/strokeStore';
 import { RecognitionScheduler } from './scheduler';
@@ -52,12 +52,26 @@ export class Pipeline {
       // while the model is still reading, nothing is drawn: only the final answer appears
       if (status.state === 'done') {
         const r = status.result;
-        // a tilted line gets its answer beside the "=" at its end, at the size of its digits
-        const place =
-          line.angle === 0
-            ? { anchor: line.bounds }
-            : { anchor: line.endBounds, glyphHeight: line.glyphHeight };
-        if (r.status === 'ok') out.push({ text: r.value, kind: 'ok', ...place });
+        // The answer sits after the "=" (at its middle height) and is as big as the handwriting. A line that is
+        // not written left to right gets its answer turned like the "="; a column of upright glyphs gets an
+        // upright answer below (or above) its "=".
+        const size = { glyphHeight: line.glyphHeight };
+        let place: Partial<AnswerLabel> & { anchor: AnswerLabel['anchor'] };
+        if (line.angle === 0) place = { anchor: line.endBounds, ...size };
+        else if (status.kind === 'stack') {
+          place = { anchor: line.endBounds, ...size, side: line.angle > 0 ? 'below' : 'above' };
+        } else {
+          const dx = Math.cos(line.angle);
+          const dy = Math.sin(line.angle);
+          place = {
+            anchor: line.endBounds,
+            ...size,
+            from: { x: line.tail.x + dx * ANSWER_GAP, y: line.tail.y + dy * ANSWER_GAP },
+            angle: line.angle,
+          };
+        }
+        const sure = status.confidence === undefined ? {} : { confidence: status.confidence };
+        if (r.status === 'ok') out.push({ text: r.value, kind: 'ok', ...place, ...sure });
         else if (r.status === 'undefined') out.push({ text: 'Undefined', kind: 'undefined', ...place });
         else if (r.status === 'error') out.push({ text: '?', kind: 'error', ...place });
         // 'incomplete' (no "=" yet): show nothing
