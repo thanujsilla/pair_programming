@@ -1,7 +1,7 @@
 import { strokeBounds, unionRect, type Rect } from './bounds';
 import { findFractions } from './fractions';
 import { splitSideBySide } from './sideBySide';
-import { MIN_TILT, estimateAngle, rectCentre, straighten, typicalSize } from './rotate';
+import { MIN_TILT, centreOf, digitHeight, estimateAngle, rectCentre, rotatePoint, straighten, typicalSize } from './rotate';
 import type { Stroke } from './types';
 
 /** One handwritten line (one equation). Lines are ordered top to bottom. */
@@ -22,8 +22,13 @@ export interface Line {
   readonly angle: number;
   /** The ink at the right-hand end of the line (the "="): the answer is drawn beside it. */
   readonly endBounds: Rect;
-  /** Height of a typical digit, measured along the writing direction. */
+  /** Height of one handwritten digit (bars and dots ignored): the answer is written this big. */
   readonly glyphHeight: number;
+  /**
+   * The point just past the last symbol (the "="), in the writing direction, centred on it: the
+   * answer starts here and runs along `angle`, so it follows the orientation of the "=".
+   */
+  readonly tail: { readonly x: number; readonly y: number };
 }
 
 interface Interval {
@@ -91,20 +96,12 @@ function clusterRows(strokes: readonly Stroke[]): Cluster[] {
   return clusters;
 }
 
-const STACKED_OVERLAP = 0.5; // share of the narrower box that may overlap sideways
 const NEAR_FACTOR = 1.5; // clusters further apart than this many digit sizes are not neighbours
 
 function gap(a: Rect, b: Rect): number {
   const gx = Math.max(0, Math.max(a.left, b.left) - Math.min(a.right, b.right));
   const gy = Math.max(0, Math.max(a.top, b.top) - Math.min(a.bottom, b.bottom));
   return Math.hypot(gx, gy);
-}
-
-/** Do these two boxes sit mostly above/below each other? A line's next piece lies beside it. */
-function stacked(a: Rect, b: Rect): boolean {
-  const overlap = Math.min(a.right, b.right) - Math.max(a.left, b.left);
-  const narrower = Math.min(a.right - a.left, b.right - b.left);
-  return overlap > STACKED_OVERLAP * narrower;
 }
 
 /** Tilt of a set of strokes, or 0 when it is (nearly) flat or not a single line. */
@@ -128,11 +125,13 @@ function mergeTilted(input: Cluster[]): Cluster[] {
         const a = clusters[i] as Cluster;
         const b = clusters[j] as Cluster;
         if (a.strokes.length + b.strokes.length < 3) continue;
-        // cheap rejections first: far apart, or stacked one above the other (not a continuation)
-        if (stacked(a.bounds, b.bounds)) continue;
         const strokes = [...a.strokes, ...b.strokes];
         const size = typicalSize(strokes.map(strokeBounds));
+        // cheap rejection first: far apart
         if (gap(a.bounds, b.bounds) > NEAR_FACTOR * size) continue;
+        // Do the two pieces, together, form ONE straight line (flat, tilted or turned a quarter turn)?
+        // Their boxes may well overlap sideways on a diagonal line, so that cannot be used to rule a merge
+        // out; the guards are the consistent-angle test and the single-row check after straightening.
         const angle = tiltOf(strokes);
         if (angle === 0) continue;
         if (clusterRows(straighten(strokes, angle)).length !== 1) continue;
@@ -148,7 +147,6 @@ function mergeTilted(input: Cluster[]): Cluster[] {
 
 /** The ink at the right end of a straightened line, as a box in the page's own coordinates. */
 function endOf(strokes: readonly Stroke[], angle: number, glyph: number, fallback: Rect): Rect {
-  if (angle === 0) return fallback;
   const flat = straighten(strokes, angle).map(strokeBounds);
   const right = Math.max(...flat.map((b) => b.right));
   let end: Rect | null = null;
@@ -157,6 +155,17 @@ function endOf(strokes: readonly Stroke[], angle: number, glyph: number, fallbac
     if (rectCentre(b).x >= right - 0.9 * glyph) end = end ? unionRect(end, strokeBounds(s)) : strokeBounds(s);
   });
   return end ?? fallback;
+}
+
+/** Where the writing ends, in page coordinates: just past the last symbol, level with its middle. */
+function tailOf(strokes: readonly Stroke[], angle: number, glyph: number): { x: number; y: number } {
+  const flat = straighten(strokes, angle).map(strokeBounds);
+  const right = Math.max(...flat.map((b) => b.right));
+  let end: Rect | null = null;
+  for (const b of flat) if (rectCentre(b).x >= right - 0.9 * glyph) end = end ? unionRect(end, b) : b;
+  const at = end ?? flat.reduce(unionRect);
+  // the straightened frame is the page turned by -angle around the strokes' centre; turn the point back
+  return rotatePoint(right, (at.top + at.bottom) / 2, Math.cos(angle), Math.sin(angle), centreOf(strokes));
 }
 
 /**
@@ -182,15 +191,17 @@ export function groupLines(strokes: readonly Stroke[]): Line[] {
       const sorted = [...c.strokes].sort(byTime);
       const angle = tiltOf(sorted);
       const flat = angle === 0 ? sorted : straighten(sorted, angle);
-      const glyphHeight = typicalSize(flat.map(strokeBounds));
+      const flatBoxes = flat.map(strokeBounds);
+      const size = typicalSize(flatBoxes); // also counts long bars: used to find the end of the line
       return {
         index,
         strokes: sorted,
         bounds: c.bounds,
         signature: sorted.map((s) => s.id).join(','),
         angle,
-        endBounds: endOf(sorted, angle, glyphHeight, c.bounds),
-        glyphHeight,
+        endBounds: endOf(sorted, angle, size, c.bounds),
+        glyphHeight: digitHeight(flatBoxes),
+        tail: tailOf(sorted, angle, size),
       };
     });
 }

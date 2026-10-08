@@ -39,3 +39,20 @@ export function tiltedEquation(angle: number, prefix = 't'): Stroke[] {
     seg('=2', 3, [0, 0.65], [1, 0.65]),
   ];
 }
+
+/**
+ * `1 + 4 =` written as a COLUMN of upright glyphs (nothing turned), from the top down, or from the
+ * bottom up when `down` is false. Glyphs are `pitch` apart.
+ */
+export function columnEquation(down = true, pitch = 120, prefix = 'c'): Stroke[] {
+  const flat = tiltedEquation(0, prefix);
+  const glyphOf = (id: string): number => (id.endsWith('1') && !id.includes('=') ? 0 : id.includes('+') ? 1 : id.includes('4') ? 2 : 3);
+  return flat.map((s) => {
+    const i = glyphOf(s.id.slice(prefix.length));
+    const row = down ? i : 3 - i;
+    return {
+      ...s,
+      points: s.points.map((p) => ({ ...p, x: p.x - i * 85 - 27 + 100, y: p.y + row * pitch - 400 + 100 })),
+    };
+  });
+}

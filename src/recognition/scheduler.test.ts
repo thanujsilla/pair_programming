@@ -12,6 +12,7 @@ function mkLine(index: number, signature: string): Line {
     angle: 0,
     endBounds: { left: 0, top: index * 100, right: 100, bottom: index * 100 + 40 },
     glyphHeight: 40,
+    tail: { x: 100, y: index * 100 + 20 },
   };
 }
 

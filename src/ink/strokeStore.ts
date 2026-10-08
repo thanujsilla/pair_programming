@@ -73,6 +73,14 @@ export class StrokeStore {
     return true;
   }
 
+  /** Remove the strokes with these ids as ONE undo step (used by scratch-to-erase). */
+  removeStrokes(ids: ReadonlySet<string>): boolean {
+    const next = this.current.filter((s) => !ids.has(s.id));
+    if (next.length === this.current.length) return false;
+    this.apply(next);
+    return true;
+  }
+
   clear(): void {
     if (this.current.length === 0) return;
     this.endGesture();
