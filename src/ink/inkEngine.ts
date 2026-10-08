@@ -14,6 +14,14 @@ const ANSWER_COLORS: Record<AnswerKind, string> = {
   running: 'rgba(31,29,26,0.35)',
 };
 
+/** Context options for the live layer: the low-latency hint only where it is known to render correctly. */
+export function lowLatencyCanvasOptions(
+  userAgent: string = typeof navigator === 'undefined' ? '' : navigator.userAgent,
+): CanvasRenderingContext2DSettings {
+  const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
+  return mobile ? {} : { desynchronized: true };
+}
+
 /**
  * The drawing engine. Plain TypeScript, no React: pointer events, rendering and
  * eraser logic never go through React state, so drawing stays at 60 FPS.
@@ -73,7 +81,9 @@ export class InkEngine {
 
     const inkCtx = this.ink.getContext('2d');
     const overlayCtx = this.overlay.getContext('2d');
-    const liveCtx = this.live.getContext('2d', { desynchronized: true }); // low-latency hint
+    // `desynchronized` (low-latency hint) renders as a solid black canvas on many Android
+    // phones, and the live layer covers the whole page, so use it on desktop only.
+    const liveCtx = this.live.getContext('2d', lowLatencyCanvasOptions());
     if (!inkCtx || !overlayCtx || !liveCtx) throw new Error('Canvas 2D is not available');
     this.inkCtx = inkCtx;
     this.overlayCtx = overlayCtx;
