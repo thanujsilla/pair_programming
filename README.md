@@ -5,7 +5,9 @@ and writes the answer on the page right after the `=`. Change a digit or erase a
 Stroke capture, preprocessing, neural-network inference and arithmetic all run in the browser: **no cloud APIs,
 and it works offline (airplane mode).**
 
-**Live demo:**https://pair-programming-proj.vercel.app/.
+**Live demo:**
+https://pair-programming-proj.vercel.app/
+
 **Design document:** [ARCHITECTURE.md](ARCHITECTURE.md) ·
 
 ## Quick start
@@ -41,7 +43,14 @@ worker caches the app, the model and the ONNX WASM runtime.
 | BODMAS/PEMDAS, multi-digit, decimals, negatives; own parser, no `eval` | `src/math/` |
 | `Undefined` for ÷0; malformed input never throws | `src/math/evaluate.ts` |
 | Answer drawn next to `=`, re-evaluated when the ink changes | `src/recognition/pipeline.ts`, `scheduler.ts` |
-| Diagonal writing, several equations on one row, stacked fractions, slash division | `src/ink/lineGrouper.ts`, `rotate.ts`, `sideBySide.ts`, `fractions.ts` |
+| Writing in **any direction**: sloped lines (digits upright or turned with the line), a page turned a quarter turn, a **vertical column of upright digits** (`1` / `+` / `3` / `=` from the top down or the bottom up) and upside down; the answer follows the `=` (turned like it, or upright under/over a column); several equations on one row, stacked fractions, slash division | `src/ink/lineGrouper.ts`, `rotate.ts`, `src/recognition/variants.ts` |
+| **Zoom** (Ctrl + scroll, trackpad or two-finger pinch, − / + buttons) up to 600 %; when zoomed in, scroll or drag with two fingers to move around. The page is one screen (no endless scrolling): use *+ New page* for more room. Write at any zoom | `src/ink/view.ts`, `inkEngine.ts` |
+| **Answer size follows your handwriting**: the answer is written as tall as your digits, after the `=`, at its middle height | `src/ink/answers.ts`, `src/ink/rotate.ts` (`digitHeight`) |
+| **Confidence indicator**: an answer the model is unsure of is drawn faded with a dashed underline and a "?" | `src/ink/answers.ts`, `inkEngine.ts` |
+| **Write-in animation**: the answer is written onto the page from left to right (respects *reduce motion*) | `src/ink/inkEngine.ts` |
+| **Notebook pages**: start a new page when one is full (+ New page), flip between pages with ‹ ›, delete a page; every page keeps its own ink, undo history, answers and zoom | `src/notebook.ts`, `src/App.tsx` |
+| **Scratch-to-erase**: scribble over ink with the pen to remove it (one undo step) | `src/ink/scratch.ts` |
+| Digital-paper look: ruled lines, paper grain, handwritten-style answers | `src/index.css` |
 | 60 FPS: inference in a Web Worker, painting in `requestAnimationFrame` | `src/recognition/recognizer.worker.ts` |
 | Offline operation | `sw/sw.template.js` + plugin in `vite.config.ts` |
 | Live FPS / long-task / model-time readout (*Performance* button) | `src/ui/` |
@@ -51,7 +60,7 @@ worker caches the app, the model and the ONNX WASM runtime.
 | | |
 | --- | --- |
 | **Model** | CoMER (Coverage-based Transformer for handwritten math expression recognition), exported to ONNX, INT8-quantised |
-| **Source** | open-source **ink-on** project: https://github.com/kimseungdae/ink-on · based on CoMER, Zhao & Gao, ECCV 2022 ([paper](https://arxiv.org/abs/2207.04410), [reference code](https://github.com/Green-Wood/CoMER)) |
+| **Source** | open-source **ink-on** https://github.com/kimseungdae/ink-on· based on CoMER, Zhao & Gao, ECCV 2022 ([paper](https://arxiv.org/abs/2207.04410), [reference code](https://github.com/Green-Wood/CoMER)) |
 | **Licence** | Apache-2.0 as stated by the ink-on repository (_confirm against its LICENSE file_). Trained on CROHME; reuse of the weights beyond coursework should check the data terms |
 | **Architecture** | DenseNet image encoder → Transformer decoder with coverage attention, beam-search decoding |
 | **Size** | `encoder_int8.onnx` 3.5 MB + `decoder_int8.onnx` 4.1 MB + `vocab.json` (in `public/models/comer/`) |
